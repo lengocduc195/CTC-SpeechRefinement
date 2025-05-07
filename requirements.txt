@@ -11,3 +11,6 @@ pyctcdecode>=0.3.0
 jiwer>=2.3.0
 noisereduce>=2.0.0
 scikit-learn>=1.0.0
+plotly
+seaborn
+nbformat>=4.2.0
