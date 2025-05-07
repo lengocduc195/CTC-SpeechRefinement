@@ -27,7 +27,7 @@ SAMPLE_RATE = 16000  # Target sample rate in Hz
 AUDIO_DURATION = None  # Set to None to use full audio or a value in seconds to trim
 
 # Feature extraction settings
-FEATURE_TYPE = "mfcc"  # Options: "mfcc", "mel_spectrogram", "spectrogram"
+FEATURE_TYPE = "spectrogram"  # Options: "mfcc", "mel_spectrogram", "spectrogram"
 N_MFCC = 40  # Number of MFCC features
 N_MELS = 128  # Number of Mel bands
 N_FFT = 512  # FFT window size
@@ -36,7 +36,7 @@ WIN_LENGTH = 400  # Window length for STFT (25ms at 16kHz)
 
 # Model settings
 MODEL_TYPE = "pretrained"  # Options: "pretrained", "custom"
-PRETRAINED_MODEL_NAME = "facebook/wav2vec2-base-960h"  # Pretrained model from Hugging Face
+PRETRAINED_MODEL_NAME = "VietAI/wav2vec2-large-vi"  # Pretrained model from Hugging Face
 
 # CTC Decoder settings
 DECODER_TYPE = "greedy"  # Options: "greedy", "beam_search"

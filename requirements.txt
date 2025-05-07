@@ -14,3 +14,4 @@ scikit-learn>=1.0.0
 plotly
 seaborn
 nbformat>=4.2.0
+https://github.com/kpu/kenlm/archive/master.zip

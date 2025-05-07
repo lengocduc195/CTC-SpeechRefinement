@@ -113,16 +113,20 @@ class CTCDecoder:
         # Convert logits to numpy if they are torch tensors
         if isinstance(logits, torch.Tensor):
             logits = logits.cpu().numpy()
+            print(f"logic {logits.shape}")
         
         # Ensure logits are in the right shape
         if logits.ndim > 2:
             logits = logits[0]  # Take the first batch item
+            print(f"logic {logits.shape}")
         
         # Convert logits to log probabilities
         log_probs = torch.nn.functional.log_softmax(torch.tensor(logits), dim=-1).numpy()
+        print(f"log_probs {log_probs.shape}")
         
         # Decode using pyctcdecode
         transcription = self.decoder.decode(log_probs, beam_width=self.beam_width)
+        print(f"transcription {transcription.shape}")
         
         logger.info(f"Beam search decoding result: {transcription}")
         return transcription
