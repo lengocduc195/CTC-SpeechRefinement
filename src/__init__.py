@@ -1,0 +1,3 @@
+"""
+CTC Speech Transcription project.
+"""
