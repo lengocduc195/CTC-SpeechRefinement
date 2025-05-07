@@ -1,31 +1,21 @@
 """
-Script to run the audio preprocessing UI.
+Script to run the preprocessing UI using the new package structure.
 """
 
-import tkinter as tk
 import argparse
 import logging
 import os
-import sys
+from pathlib import Path
 
 # Add the project root directory to the Python path
+import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.ui.preprocessing_ui import PreprocessingUI
+from ctc_speech_refinement.apps.ui.run import main as preprocessing_ui_main
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-def main():
-    """Run the preprocessing UI."""
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Audio Preprocessing UI")
     parser.add_argument("--language", "-l", choices=["en", "vi"], default="vi", help="UI language (en or vi)")
     args = parser.parse_args()
-    
-    root = tk.Tk()
-    app = PreprocessingUI(root, language=args.language)
-    root.mainloop()
 
-if __name__ == "__main__":
-    main()
+    preprocessing_ui_main(language=args.language)

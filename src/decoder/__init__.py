@@ -1,3 +1,0 @@
-"""
-CTC decoder module.
-"""

@@ -1,3 +1,0 @@
-"""
-Acoustic models module.
-"""

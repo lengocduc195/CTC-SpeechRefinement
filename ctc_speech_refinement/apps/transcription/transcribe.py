@@ -1,5 +1,5 @@
 """
-Main script for CTC speech transcription.
+Main module for CTC speech transcription.
 """
 
 import os
@@ -9,12 +9,12 @@ import time
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Tuple
 
-from src.preprocessing.audio import batch_preprocess
-from src.models.acoustic_model import AcousticModel
-from src.decoder.ctc_decoder import CTCDecoder
-from src.utils.file_utils import get_audio_files, save_transcriptions, save_json
-from src.utils.evaluation import evaluate_transcriptions, save_evaluation_results, plot_metrics
-from config.config import (
+from ctc_speech_refinement.core.preprocessing.audio import batch_preprocess
+from ctc_speech_refinement.core.models.acoustic_model import AcousticModel
+from ctc_speech_refinement.core.decoder.ctc_decoder import CTCDecoder
+from ctc_speech_refinement.core.utils.file_utils import get_audio_files, save_transcriptions, save_json
+from ctc_speech_refinement.core.utils.evaluation import evaluate_transcriptions, save_evaluation_results, plot_metrics
+from ctc_speech_refinement.config.config import (
     TEST1_DIR, TRANSCRIPTS_DIR, RESULTS_DIR, 
     PRETRAINED_MODEL_NAME, DECODER_TYPE, BEAM_WIDTH
 )
@@ -171,7 +171,7 @@ def main():
     
     # Evaluate if reference transcriptions are available
     if args.reference_dir:
-        from src.utils.file_utils import load_transcriptions
+        from ctc_speech_refinement.core.utils.file_utils import load_transcriptions
         
         logger.info(f"Loading reference transcriptions from {args.reference_dir}")
         references = load_transcriptions(args.reference_dir)

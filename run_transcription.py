@@ -1,5 +1,5 @@
 """
-Script to run transcription using the new package structure.
+Script to run speech transcription using the new package structure.
 """
 
 import argparse
@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from ctc_speech_refinement.apps.transcription.transcribe import main as transcribe_main
+from ctc_speech_refinement.apps.transcription.transcribe import main as transcription_main
 
 if __name__ == "__main__":
-    transcribe_main()
+    transcription_main()
