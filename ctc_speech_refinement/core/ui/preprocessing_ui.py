@@ -18,8 +18,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import time
 import json
 
-from src.preprocessing.audio import preprocess_audio, batch_preprocess
-from src.utils.file_utils import get_audio_files
+from ctc_speech_refinement.core.preprocessing.audio import preprocess_audio, batch_preprocess
+from ctc_speech_refinement.core.utils.file_utils import get_audio_files
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -341,7 +341,7 @@ class PreprocessingUI:
         
         try:
             # Load original audio
-            from src.preprocessing.audio import load_audio
+            from ctc_speech_refinement.core.preprocessing.audio import load_audio
             original_audio, sample_rate = load_audio(input_path)
             
             # Process audio with selected options

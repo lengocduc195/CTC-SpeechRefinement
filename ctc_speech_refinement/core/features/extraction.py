@@ -7,7 +7,7 @@ import librosa
 import logging
 from typing import Dict, Tuple, List, Optional, Union
 
-from config.config import (
+from ctc_speech_refinement.config.config import (
     FEATURE_TYPE, N_MFCC, N_MELS, N_FFT, 
     HOP_LENGTH, WIN_LENGTH, SAMPLE_RATE
 )

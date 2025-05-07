@@ -13,10 +13,10 @@ import os
 from pathlib import Path
 import time
 
-from src.models.acoustic_model import AcousticModel
-from src.decoder.ctc_decoder import CTCDecoder
-from src.decoder.ctc_drafter import CTCDrafter
-from src.decoder.cr_ctc import CRCTC
+from ctc_speech_refinement.core.models.acoustic_model import AcousticModel
+from ctc_speech_refinement.core.decoder.ctc_decoder import CTCDecoder
+from ctc_speech_refinement.core.decoder.ctc_drafter import CTCDrafter
+from ctc_speech_refinement.core.decoder.cr_ctc import CRCTC
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

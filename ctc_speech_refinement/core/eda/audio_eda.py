@@ -12,14 +12,14 @@ from typing import Dict, List, Tuple, Optional, Union, Any
 from pathlib import Path
 import pandas as pd
 
-from src.preprocessing.audio import preprocess_audio, batch_preprocess
-from src.eda.preprocessing import preprocess_for_eda, batch_preprocess_for_eda
-from src.utils.file_utils import get_audio_files
-from src.eda.descriptive_stats import analyze_descriptive_stats, batch_analyze_descriptive_stats
-from src.eda.time_domain import analyze_time_domain, batch_analyze_time_domain
-from src.eda.frequency_domain import analyze_frequency_domain, batch_analyze_frequency_domain
-from src.eda.pitch_timbre import analyze_pitch_timbre, batch_analyze_pitch_timbre
-from src.eda.anomaly_detection import analyze_anomalies, batch_analyze_anomalies
+from ctc_speech_refinement.core.preprocessing.audio import preprocess_audio, batch_preprocess
+from ctc_speech_refinement.core.eda.preprocessing import preprocess_for_eda, batch_preprocess_for_eda
+from ctc_speech_refinement.core.utils.file_utils import get_audio_files
+from ctc_speech_refinement.core.eda.descriptive_stats import analyze_descriptive_stats, batch_analyze_descriptive_stats
+from ctc_speech_refinement.core.eda.time_domain import analyze_time_domain, batch_analyze_time_domain
+from ctc_speech_refinement.core.eda.frequency_domain import analyze_frequency_domain, batch_analyze_frequency_domain
+from ctc_speech_refinement.core.eda.pitch_timbre import analyze_pitch_timbre, batch_analyze_pitch_timbre
+from ctc_speech_refinement.core.eda.anomaly_detection import analyze_anomalies, batch_analyze_anomalies
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Optional, Union
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 from pathlib import Path
 
-from config.config import PRETRAINED_MODEL_NAME, MODELS_DIR
+from ctc_speech_refinement.config.config import PRETRAINED_MODEL_NAME, MODELS_DIR
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

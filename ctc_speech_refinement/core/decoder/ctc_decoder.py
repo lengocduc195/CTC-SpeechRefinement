@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Optional, Union
 from pyctcdecode import build_ctcdecoder
 import os
 
-from config.config import (
+from ctc_speech_refinement.config.config import (
     DECODER_TYPE, BEAM_WIDTH, ALPHA, BETA, USE_LM, LM_PATH
 )
 

@@ -13,9 +13,9 @@ import os
 from pathlib import Path
 import time
 
-from src.models.acoustic_model import AcousticModel
-from src.decoder.ctc_decoder import CTCDecoder
-from src.eda.preprocessing import time_stretch, pitch_shift, add_noise
+from ctc_speech_refinement.core.models.acoustic_model import AcousticModel
+from ctc_speech_refinement.core.decoder.ctc_decoder import CTCDecoder
+from ctc_speech_refinement.core.eda.preprocessing import time_stretch, pitch_shift, add_noise
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

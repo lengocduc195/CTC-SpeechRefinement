@@ -13,10 +13,10 @@ import soundfile as sf
 from typing import Tuple, Optional, List, Dict, Union, Any
 import logging
 
-from config.config import SAMPLE_RATE, AUDIO_DURATION
-from src.preprocessing.vad import apply_vad
-from src.preprocessing.noise_reduction import reduce_noise
-from src.preprocessing.frequency_normalization import normalize_frequency
+from ctc_speech_refinement.config.config import SAMPLE_RATE, AUDIO_DURATION
+from ctc_speech_refinement.core.preprocessing.vad import apply_vad
+from ctc_speech_refinement.core.preprocessing.noise_reduction import reduce_noise
+from ctc_speech_refinement.core.preprocessing.frequency_normalization import normalize_frequency
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

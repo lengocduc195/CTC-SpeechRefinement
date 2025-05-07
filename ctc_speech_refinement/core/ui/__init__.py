@@ -1,3 +1,3 @@
 """
-UI module for CTC Speech Refinement.
+ui module for CTC-SpeechRefinement.
 """

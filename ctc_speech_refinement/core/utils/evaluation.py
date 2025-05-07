@@ -11,7 +11,7 @@ from jiwer import wer, cer
 import os
 from pathlib import Path
 
-from config.config import RESULTS_DIR
+from ctc_speech_refinement.config.config import RESULTS_DIR
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

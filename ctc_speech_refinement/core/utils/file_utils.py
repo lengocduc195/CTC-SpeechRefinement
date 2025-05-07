@@ -9,7 +9,7 @@ import logging
 from typing import List, Dict, Optional, Union, Any
 from pathlib import Path
 
-from config.config import TRANSCRIPTS_DIR
+from ctc_speech_refinement.config.config import TRANSCRIPTS_DIR
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
