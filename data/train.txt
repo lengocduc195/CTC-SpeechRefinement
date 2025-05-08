@@ -1,0 +1,5 @@
+Xin chào, tôi đang thử nghiệm hệ thống nhận dạng tiếng nói.
+Công nghệ nhận dạng tiếng nói đã phát triển rất nhanh trong những năm gần đây.
+Mô hình CTC đã cải thiện đáng kể độ chính xác của hệ thống nhận dạng tiếng nói.
+Việt Nam có một nền văn hóa phong phú và đa dạng với nhiều dân tộc khác nhau.
+Chúng tôi đang nghiên cứu các phương pháp cải thiện độ chính xác của hệ thống ASR.

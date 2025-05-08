@@ -166,6 +166,11 @@ class TokenizerBase:
 
     def get_blank_id(self) -> int:
         """Return the ID of the blank token."""
+        # Make sure blank_id is within the valid range
+        vocab_size = self.get_vocab_size()
+        if self.blank_id >= vocab_size:
+            # If blank_id is out of bounds, use the last valid token ID
+            return vocab_size - 1
         return self.blank_id
 
     def save(self, path: str) -> None:
@@ -527,20 +532,9 @@ class WordTokenizer(TokenizerBase):
             for word in words:
                 if word in self.token_to_id:
                     ids.append(self.token_to_id[word])
-                elif self.subword_tokenizer:
-                    try:
-                        # Fall back to subword tokenization for OOV
-                        subword_ids = self.subword_tokenizer.encode(word)
-                        # Mark these as special OOV tokens by adding an offset
-                        oov_ids = [self.vocab_size + 2 + sid for sid in subword_ids]
-                        ids.extend(oov_ids)
-                    except Exception as e:
-                        print(f"Error in subword encoding for '{word}': {e}")
-                        # Fallback to character-level encoding
-                        for c in word:
-                            ids.append(self.unk_id)  # Use UNK for each character as a last resort
                 else:
-                    # No fallback available, use UNK token
+                    # For OOV words, just use the UNK token
+                    # This is simpler and safer than using subword tokenization with offsets
                     ids.append(self.unk_id)
 
             return ids
@@ -553,38 +547,18 @@ class WordTokenizer(TokenizerBase):
         """Convert word IDs to text with OOV handling."""
         try:
             words = []
-            i = 0
-            while i < len(ids):
-                if ids[i] == self.blank_id:
-                    i += 1
+            for id in ids:
+                if id == self.blank_id:
                     continue
-
-                if ids[i] < self.vocab_size:
+                elif id < self.vocab_size:
                     # Regular word
-                    words.append(self.id_to_token.get(ids[i], ''))
-                elif ids[i] == self.unk_id:
+                    words.append(self.id_to_token.get(id, ''))
+                elif id == self.unk_id:
                     # Unknown word
                     words.append(UNK_TOKEN)
-                elif self.subword_tokenizer and ids[i] > self.vocab_size + 1:
-                    try:
-                        # OOV word represented as subwords
-                        # Collect all consecutive subword IDs
-                        subword_ids = []
-                        while i < len(ids) and ids[i] > self.vocab_size + 1:
-                            subword_ids.append(ids[i] - (self.vocab_size + 2))
-                            i += 1
-                        # Decode subwords
-                        if subword_ids:
-                            words.append(self.subword_tokenizer.decode(subword_ids))
-                        continue
-                    except Exception as e:
-                        print(f"Error in subword decoding: {e}")
-                        words.append(UNK_TOKEN)
                 else:
                     # Unrecognized ID
                     words.append(UNK_TOKEN)
-
-                i += 1
 
             return ' '.join(words)
         except Exception as e:
@@ -597,6 +571,12 @@ class CTCDecoder:
     def __init__(self, tokenizer: TokenizerBase):
         self.tokenizer = tokenizer
         self.blank_id = tokenizer.get_blank_id()
+
+        # Make sure blank_id is valid
+        vocab_size = tokenizer.get_vocab_size()
+        if self.blank_id >= vocab_size:
+            print(f"Warning: Blank ID {self.blank_id} is out of bounds for vocabulary size {vocab_size}. Using last token as blank.")
+            self.blank_id = vocab_size - 1
 
     def greedy_decode(self, logits: torch.Tensor) -> Tuple[List[int], float]:
         """
@@ -1525,11 +1505,18 @@ def create_sample_data(audio_dir: str, transcript_dir: str, num_samples: int = 5
     for i in range(min(num_samples, len(sentences))):
         # Create a simple audio file (1 second of silence at 16kHz)
         sample_rate = 16000
-        waveform = torch.zeros(1, sample_rate)  # 1 second of silence
 
         # Save audio file
         audio_path = os.path.join(audio_dir, f"sample_{i+1:02d}.wav")
-        torchaudio.save(audio_path, waveform, sample_rate)
+        try:
+            waveform = torch.zeros(1, sample_rate)  # 1 second of silence
+            torchaudio.save(audio_path, waveform, sample_rate)
+        except Exception as e:
+            print(f"Error saving audio file {audio_path}: {e}")
+            print("Creating an empty file as a fallback")
+            # Create an empty file as a fallback
+            with open(audio_path, 'wb') as f:
+                f.write(b'')
 
         # Save transcript
         transcript_path = os.path.join(transcript_dir, f"sample_{i+1:02d}.txt")

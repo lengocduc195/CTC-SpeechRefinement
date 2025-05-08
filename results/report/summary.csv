@@ -1,0 +1,2 @@
+Tokenizer,CER,WER,SER,Greedy Time (ms),Beam Time (ms)
+word,0.9547,1.0000,1.0000,0.00,521.85

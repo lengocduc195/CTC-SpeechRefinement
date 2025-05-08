@@ -1,0 +1,86 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Vietnamese ASR Tokenization Evaluation</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1, h2, h3 { color: #333; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+                .plot { margin: 20px 0; max-width: 100%; }
+                .recommendations { background-color: #f8f8f8; padding: 15px; border-left: 4px solid #4CAF50; }
+            </style>
+        </head>
+        <body>
+            <h1>Vietnamese ASR Tokenization Evaluation Report</h1>
+
+            <h2>Summary</h2>
+            <table>
+                <tr>
+        <th>Tokenizer</th><th>CER</th><th>WER</th><th>SER</th><th>Greedy Time (ms)</th><th>Beam Time (ms)</th></tr><tr><td>word</td><td>0.9547</td><td>1.0000</td><td>1.0000</td><td>0.00</td><td>521.85</td></tr>
+            </table>
+
+            <h2>Comparison Plots</h2>
+            <div class="plot">
+                <h3>Error Rates by Tokenization Level</h3>
+                <img src="error_rates.png" alt="Error Rates" width="800">
+            </div>
+
+            <div class="plot">
+                <h3>Decoding Latency by Tokenization Level</h3>
+                <img src="latency.png" alt="Latency" width="800">
+            </div>
+
+            <div class="plot">
+                <h3>Accuracy vs. Speed Trade-off</h3>
+                <img src="tradeoff.png" alt="Trade-off" width="800">
+            </div>
+
+            <h2>Analysis and Recommendations</h2>
+            <div class="recommendations">
+                <h3>Tokenization Level Comparison</h3>
+                <ul>
+                    <li><strong>Character-level:</strong>
+                        <ul>
+                            <li>Pros: Smallest vocabulary, no OOV issues, handles all Vietnamese characters</li>
+                            <li>Cons: Longer sequences, slower decoding, requires stronger language model</li>
+                            <li>Best for: Maximum coverage of Vietnamese text, handling rare words</li>
+                        </ul>
+                    </li>
+                    <li><strong>Subword-level (BPE):</strong>
+                        <ul>
+                            <li>Pros: Good balance between vocabulary size and sequence length, handles word variations</li>
+                            <li>Cons: May produce suboptimal segmentation for Vietnamese</li>
+                            <li>Best for: General-purpose ASR with good balance of accuracy and speed</li>
+                        </ul>
+                    </li>
+                    <li><strong>Syllable-level:</strong>
+                        <ul>
+                            <li>Pros: Natural unit for Vietnamese, shorter sequences than characters</li>
+                            <li>Cons: Larger vocabulary than characters, potential OOV issues</li>
+                            <li>Best for: Vietnamese-specific ASR where syllables are well-defined</li>
+                        </ul>
+                    </li>
+                    <li><strong>Word-level:</strong>
+                        <ul>
+                            <li>Pros: Shortest sequences, fastest decoding, direct mapping to meaning</li>
+                            <li>Cons: Largest vocabulary, significant OOV issues, requires word segmentation</li>
+                            <li>Best for: Domain-specific applications with limited vocabulary, real-time requirements</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>Recommendations</h3>
+                <ul>
+                    <li><strong>For real-time applications:</strong> Consider syllable or word-level tokenization with greedy decoding</li>
+                    <li><strong>For maximum accuracy:</strong> Use character or subword-level with beam search and a strong LM</li>
+                    <li><strong>For Vietnamese-specific applications:</strong> Syllable-level tokenization offers a good balance</li>
+                    <li><strong>For general-purpose ASR:</strong> Subword-level (BPE) with 5,000-10,000 tokens provides flexibility</li>
+                </ul>
+            </div>
+        </body>
+        </html>
+        
