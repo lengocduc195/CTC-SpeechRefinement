@@ -1,0 +1,34 @@
+{
+  "substitution_patterns": [],
+  "deletion_patterns": [
+    {
+      "word_length": 5,
+      "examples": [
+        {
+          "word": "những",
+          "count": 1
+        },
+        {
+          "word": "tiếng",
+          "count": 1
+        }
+      ],
+      "total_count": 2,
+      "pattern_type": "Content word deletion"
+    },
+    {
+      "word_length": 3,
+      "examples": [
+        {
+          "word": "nói",
+          "count": 1
+        }
+      ],
+      "total_count": 1,
+      "pattern_type": "Content word deletion"
+    }
+  ],
+  "insertion_patterns": [],
+  "phonetic_confusions": [],
+  "context_patterns": []
+}

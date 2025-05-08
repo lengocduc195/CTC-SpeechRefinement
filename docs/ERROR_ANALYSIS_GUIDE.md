@@ -130,7 +130,7 @@ The visualizations include:
 ### ErrorAnalyzer
 
 ```python
-from src.eda.error_analysis import ErrorAnalyzer
+from ctc_speech_refinement.core.eda.error_analysis import ErrorAnalyzer
 
 # Initialize analyzer
 analyzer = ErrorAnalyzer(
@@ -148,7 +148,7 @@ report = analyzer.generate_error_report(output_dir)
 ### ErrorVisualizer
 
 ```python
-from src.eda.error_visualization import ErrorVisualizer
+from ctc_speech_refinement.core.eda.error_visualization import ErrorVisualizer
 
 # Initialize visualizer
 visualizer = ErrorVisualizer(report)
@@ -160,7 +160,7 @@ visualizer.create_visualizations(output_dir)
 ### ErrorImprover
 
 ```python
-from src.eda.error_improvement import ErrorImprover
+from ctc_speech_refinement.core.eda.error_improvement import ErrorImprover
 
 # Initialize improver
 improver = ErrorImprover(report)

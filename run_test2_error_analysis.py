@@ -10,10 +10,10 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 
-from src.utils.file_utils import load_transcriptions
-from src.eda.error_analysis import ErrorAnalyzer
-from src.eda.error_visualization import ErrorVisualizer
-from src.eda.error_improvement import ErrorImprover
+from ctc_speech_refinement.core.utils.file_utils import load_transcriptions
+from ctc_speech_refinement.core.eda.error_analysis import ErrorAnalyzer
+from ctc_speech_refinement.core.eda.error_visualization import ErrorVisualizer
+from ctc_speech_refinement.core.eda.error_improvement import ErrorImprover
 
 # Set up logging
 logging.basicConfig(
@@ -114,8 +114,8 @@ def main():
 
     # Save error patterns
     patterns_path = os.path.join(args.output_dir, "error_patterns.json")
-    with open(patterns_path, 'w') as f:
-        json.dump(error_patterns, f, indent=2)
+    with open(patterns_path, 'w', encoding='utf-8') as f:
+        json.dump(error_patterns, f, indent=2, ensure_ascii=False)
 
     # Generate and save improvement suggestions
     suggestions_path = improver.save_suggestions(args.output_dir)

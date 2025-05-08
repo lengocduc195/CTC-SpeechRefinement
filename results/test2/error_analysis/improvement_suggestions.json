@@ -1,0 +1,65 @@
+{
+  "acoustic_model_improvements": [
+    {
+      "issue": "Deletion pattern: Content word deletion",
+      "examples": [
+        "'những'",
+        "'tiếng'"
+      ],
+      "suggestion": "Review acoustic model performance on content words; may need more diverse training data",
+      "priority": "medium"
+    },
+    {
+      "issue": "Deletion pattern: Content word deletion",
+      "examples": [
+        "'những'",
+        "'tiếng'"
+      ],
+      "suggestion": "Review acoustic model performance on content words; may need more diverse training data",
+      "priority": "medium"
+    },
+    {
+      "issue": "Deletion pattern: Content word deletion",
+      "examples": [
+        "'nói'"
+      ],
+      "suggestion": "Review acoustic model performance on content words; may need more diverse training data",
+      "priority": "medium"
+    }
+  ],
+  "language_model_improvements": [],
+  "preprocessing_improvements": [],
+  "postprocessing_improvements": [],
+  "specific_word_fixes": [
+    {
+      "word": "những",
+      "issue_type": "deletion",
+      "count": 1,
+      "examples": [
+        "'những' deleted"
+      ],
+      "suggestion": "Review audio examples where 'những' is deleted; may need acoustic model fine-tuning",
+      "priority": "medium"
+    },
+    {
+      "word": "tiếng",
+      "issue_type": "deletion",
+      "count": 1,
+      "examples": [
+        "'tiếng' deleted"
+      ],
+      "suggestion": "Review audio examples where 'tiếng' is deleted; may need acoustic model fine-tuning",
+      "priority": "medium"
+    },
+    {
+      "word": "nói",
+      "issue_type": "deletion",
+      "count": 1,
+      "examples": [
+        "'nói' deleted"
+      ],
+      "suggestion": "Review audio examples where 'nói' is deleted; may need acoustic model fine-tuning",
+      "priority": "medium"
+    }
+  ]
+}
