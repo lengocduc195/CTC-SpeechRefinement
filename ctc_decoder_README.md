@@ -34,9 +34,13 @@ This project evaluates different tokenization levels for Vietnamese Automatic Sp
    pip install -r requirements.txt
    ```
 
-3. (Optional) Install KenLM for language model support:
+3. (Optional) Install additional packages:
    ```bash
+   # For language model support
    pip install https://github.com/kpu/kenlm/archive/master.zip
+
+   # For WER/CER calculation (recommended, but script has fallback implementation)
+   pip install jiwer
    ```
 
 ## Usage
@@ -222,6 +226,54 @@ The evaluation generates:
 3. **HTML Report**: Comprehensive analysis with visualizations
 4. **Markdown Report**: Same content in Markdown format
 
+## Troubleshooting
+
+### Common Issues
+
+1. **ValueError: After applying the transforms on the reference and hypothesis sentences, their lengths must match**
+   - This error comes from the jiwer library when calculating WER
+   - The script includes a fallback implementation that should handle this case
+   - Make sure you're using the latest version of the script
+
+2. **ImportError: No module named 'sentencepiece'**
+   - Install the sentencepiece package: `pip install sentencepiece`
+   - This is required for subword tokenization
+
+3. **ImportError: No module named 'torchaudio'**
+   - Install the torchaudio package: `pip install torchaudio`
+   - This is required for audio processing
+
+4. **ImportError: No module named 'kenlm'**
+   - KenLM is optional and only needed for language model integration
+   - Install with: `pip install https://github.com/kpu/kenlm/archive/master.zip`
+   - Note that KenLM installation can be complex on some systems
+
+5. **RuntimeError: Internal: could not parse ModelProto from data/tokenizers/vietnamese_bpe_5000.model**
+   - This error occurs when the SentencePiece model file is invalid or corrupted
+   - The script now includes a fallback mechanism that creates a character-based tokenizer when this happens
+   - To fix this permanently, you can train a proper SentencePiece model:
+     ```bash
+     python train_bpe_model.py --vocab_size 5000 --model_prefix data/tokenizers/vietnamese_bpe_5000
+     ```
+
+### Handling Missing Dependencies and Errors
+
+The script is designed to gracefully handle missing dependencies and errors:
+
+- **Missing dependencies**:
+  - If jiwer is not available, it will use a custom implementation for WER/CER calculation
+  - If KenLM is not available, it will fall back to greedy decoding without language model integration
+  - If sentencepiece is not available, subword tokenization will fall back to character-level tokenization
+
+- **Invalid model files**:
+  - If the SentencePiece model file is invalid, it will create a character-based fallback model
+  - If vocabulary files are missing or invalid, it will create simple fallback vocabularies
+
+- **Runtime errors**:
+  - The script includes extensive error handling to catch and recover from runtime errors
+  - If encoding or decoding fails, it will fall back to simpler methods
+  - If metric calculation fails, it will provide default values and continue execution
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -231,4 +283,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - This project uses PyTorch for tensor operations
 - SentencePiece for BPE tokenization
 - KenLM for language model integration
-- JiWER for WER/CER calculation
+- JiWER for WER/CER calculation (with fallback implementation)

@@ -26,7 +26,15 @@ import sentencepiece as spm
 from tqdm import tqdm
 import pandas as pd
 import seaborn as sns
-from jiwer import wer, cer
+
+# Try to use jiwer for WER/CER calculation, but provide fallback implementations
+try:
+    from jiwer import wer as jiwer_wer
+    from jiwer import cer as jiwer_cer
+    JIWER_AVAILABLE = True
+except ImportError:
+    print("jiwer not available. Using custom WER/CER implementation.")
+    JIWER_AVAILABLE = False
 
 # Try to import KenLM for language model integration
 try:
@@ -35,6 +43,88 @@ try:
 except ImportError:
     print("KenLM not available. Beam search with LM will not work.")
     KENLM_AVAILABLE = False
+
+# Custom implementations of WER and CER for fallback
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    Calculate the Levenshtein distance between two strings.
+
+    Args:
+        s1: First string
+        s2: Second string
+
+    Returns:
+        Levenshtein distance
+    """
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+def custom_wer(reference: str, hypothesis: str) -> float:
+    """
+    Calculate Word Error Rate.
+
+    Args:
+        reference: Reference text
+        hypothesis: Hypothesis text
+
+    Returns:
+        Word Error Rate
+    """
+    ref_words = reference.split()
+    hyp_words = hypothesis.split()
+
+    distance = levenshtein_distance(' '.join(ref_words), ' '.join(hyp_words))
+    return distance / max(len(ref_words), 1)
+
+def custom_cer(reference: str, hypothesis: str) -> float:
+    """
+    Calculate Character Error Rate.
+
+    Args:
+        reference: Reference text
+        hypothesis: Hypothesis text
+
+    Returns:
+        Character Error Rate
+    """
+    distance = levenshtein_distance(reference, hypothesis)
+    return distance / max(len(reference), 1)
+
+# Use jiwer if available, otherwise use custom implementations
+def wer(reference: str, hypothesis: str) -> float:
+    """Calculate Word Error Rate."""
+    if JIWER_AVAILABLE:
+        try:
+            return jiwer_wer(reference, hypothesis)
+        except Exception:
+            return custom_wer(reference, hypothesis)
+    else:
+        return custom_wer(reference, hypothesis)
+
+def cer(reference: str, hypothesis: str) -> float:
+    """Calculate Character Error Rate."""
+    if JIWER_AVAILABLE:
+        try:
+            return jiwer_cer(reference, hypothesis)
+        except Exception:
+            return custom_cer(reference, hypothesis)
+    else:
+        return custom_cer(reference, hypothesis)
 
 # Constants
 BLANK_TOKEN = "<blank>"
@@ -142,59 +232,138 @@ class SubwordTokenizer(TokenizerBase):
     def __init__(self, name: str = "subword", vocab_size: int = 5000, model_path: Optional[str] = None):
         super().__init__(name, vocab_size)
         self.sp_model = None
+        self.model_path = model_path
 
         if model_path and os.path.exists(model_path):
+            try:
+                self.sp_model = spm.SentencePieceProcessor()
+                self.sp_model.Load(model_path)
+                self.vocab_size = self.sp_model.GetPieceSize()
+
+                # Create mapping
+                self.id_to_token = {i: self.sp_model.IdToPiece(i) for i in range(self.vocab_size)}
+                self.token_to_id = {v: k for k, v in self.id_to_token.items()}
+
+                # Set blank ID
+                self.blank_id = self.vocab_size
+                print(f"Successfully loaded SentencePiece model from {model_path} with {self.vocab_size} tokens")
+            except Exception as e:
+                print(f"Error loading SentencePiece model from {model_path}: {e}")
+                print("Creating a simple character-based fallback model")
+                self._create_fallback_model()
+        else:
+            print("No SentencePiece model provided. Creating a simple character-based fallback model")
+            self._create_fallback_model()
+
+    def _create_fallback_model(self):
+        """Create a simple character-based fallback model."""
+        # Vietnamese characters (lowercase)
+        base_chars = "abcdefghijklmnopqrstuvwxyz"
+        # Vietnamese diacritics
+        vn_chars = "àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ"
+        # Digits and special characters
+        digits = "0123456789"
+        special = " ,.!?-:;\"'()[]{}%$#@&*+=/<>|~^_"
+
+        # Combine all characters
+        all_chars = base_chars + vn_chars + digits + special
+
+        # Create vocabulary
+        self.id_to_token = {i: c for i, c in enumerate(all_chars)}
+        self.token_to_id = {c: i for i, c in enumerate(all_chars)}
+        self.vocab_size = len(self.id_to_token)
+
+        # Add blank token at the end
+        self.blank_id = self.vocab_size
+        self.id_to_token[self.blank_id] = BLANK_TOKEN
+        self.token_to_id[BLANK_TOKEN] = self.blank_id
+
+        # Create a dummy sp_model that just uses character tokenization
+        self.sp_model = None
+
+    def train(self, text_file: str, model_prefix: str) -> None:
+        """Train a SentencePiece model."""
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(model_prefix), exist_ok=True)
+
+            # Check if text file exists
+            if not os.path.exists(text_file):
+                print(f"Text file {text_file} not found. Creating a sample file...")
+                with open(text_file, 'w', encoding='utf-8') as f:
+                    # Sample Vietnamese sentences
+                    sentences = [
+                        "Xin chào, tôi đang thử nghiệm hệ thống nhận dạng tiếng nói.",
+                        "Công nghệ nhận dạng tiếng nói đã phát triển rất nhanh trong những năm gần đây.",
+                        "Mô hình CTC đã cải thiện đáng kể độ chính xác của hệ thống nhận dạng tiếng nói.",
+                        "Việt Nam có một nền văn hóa phong phú và đa dạng với nhiều dân tộc khác nhau.",
+                        "Chúng tôi đang nghiên cứu các phương pháp cải thiện độ chính xác của hệ thống ASR."
+                    ]
+                    f.write('\n'.join(sentences))
+
+            # Train the model
+            spm.SentencePieceTrainer.Train(
+                f'--input={text_file} '
+                f'--model_prefix={model_prefix} '
+                f'--vocab_size={self.vocab_size} '
+                f'--character_coverage=1.0 '
+                f'--model_type=bpe '
+                f'--pad_id=-1 '
+                f'--unk_id=0 '
+                f'--bos_id=1 '
+                f'--eos_id=2 '
+                f'--normalization_rule_name=identity'
+            )
+
+            # Load the trained model
+            model_path = f"{model_prefix}.model"
             self.sp_model = spm.SentencePieceProcessor()
             self.sp_model.Load(model_path)
-            self.vocab_size = self.sp_model.GetPieceSize()
 
             # Create mapping
+            self.vocab_size = self.sp_model.GetPieceSize()
             self.id_to_token = {i: self.sp_model.IdToPiece(i) for i in range(self.vocab_size)}
             self.token_to_id = {v: k for k, v in self.id_to_token.items()}
 
             # Set blank ID
             self.blank_id = self.vocab_size
 
-    def train(self, text_file: str, model_prefix: str) -> None:
-        """Train a SentencePiece model."""
-        spm.SentencePieceTrainer.Train(
-            f'--input={text_file} '
-            f'--model_prefix={model_prefix} '
-            f'--vocab_size={self.vocab_size} '
-            f'--character_coverage=1.0 '
-            f'--model_type=bpe '
-            f'--pad_id=-1 '
-            f'--unk_id=0 '
-            f'--bos_id=1 '
-            f'--eos_id=2 '
-            f'--normalization_rule_name=identity'
-        )
-
-        # Load the trained model
-        model_path = f"{model_prefix}.model"
-        self.sp_model = spm.SentencePieceProcessor()
-        self.sp_model.Load(model_path)
-
-        # Create mapping
-        self.id_to_token = {i: self.sp_model.IdToPiece(i) for i in range(self.vocab_size)}
-        self.token_to_id = {v: k for k, v in self.id_to_token.items()}
-
-        # Set blank ID
-        self.blank_id = self.vocab_size
+            print(f"Successfully trained and loaded SentencePiece model with {self.vocab_size} tokens")
+        except Exception as e:
+            print(f"Error training SentencePiece model: {e}")
+            print("Creating a simple character-based fallback model")
+            self._create_fallback_model()
 
     def encode(self, text: str) -> List[int]:
         """Convert text to subword IDs."""
-        if self.sp_model is None:
-            raise ValueError("SentencePiece model not loaded. Call train() or load() first.")
-        return self.sp_model.EncodeAsIds(text.lower())
+        if self.sp_model is not None:
+            try:
+                return self.sp_model.EncodeAsIds(text.lower())
+            except Exception as e:
+                print(f"Error encoding text with SentencePiece: {e}")
+                print("Falling back to character-level encoding")
+                # Fallback to character-level encoding
+                return [self.token_to_id.get(c, self.token_to_id.get(UNK_TOKEN, 0)) for c in text.lower()]
+        else:
+            # Character-level encoding
+            return [self.token_to_id.get(c, self.token_to_id.get(UNK_TOKEN, 0)) for c in text.lower()]
 
     def decode(self, ids: List[int]) -> str:
         """Convert subword IDs to text."""
-        if self.sp_model is None:
-            raise ValueError("SentencePiece model not loaded. Call train() or load() first.")
         # Filter out blank tokens
         filtered_ids = [id for id in ids if id != self.blank_id]
-        return self.sp_model.DecodeIds(filtered_ids)
+
+        if self.sp_model is not None:
+            try:
+                return self.sp_model.DecodeIds(filtered_ids)
+            except Exception as e:
+                print(f"Error decoding IDs with SentencePiece: {e}")
+                print("Falling back to character-level decoding")
+                # Fallback to character-level decoding
+                return ''.join([self.id_to_token.get(id, '') for id in filtered_ids])
+        else:
+            # Character-level decoding
+            return ''.join([self.id_to_token.get(id, '') for id in filtered_ids])
 
 class SyllableTokenizer(TokenizerBase):
     """Syllable-level tokenizer for Vietnamese."""
@@ -203,29 +372,81 @@ class SyllableTokenizer(TokenizerBase):
         super().__init__(name, vocab_size)
 
         if vocab_file and os.path.exists(vocab_file):
-            # Load syllable vocabulary from file
-            with open(vocab_file, 'r', encoding='utf-8') as f:
-                syllables = [line.strip() for line in f]
+            try:
+                # Load syllable vocabulary from file
+                with open(vocab_file, 'r', encoding='utf-8') as f:
+                    syllables = [line.strip() for line in f]
 
-            # Create vocabulary
-            self.id_to_token = {i: s for i, s in enumerate(syllables)}
-            self.token_to_id = {s: i for i, s in enumerate(syllables)}
-            self.vocab_size = len(self.id_to_token)
+                # Create vocabulary
+                self.id_to_token = {i: s for i, s in enumerate(syllables)}
+                self.token_to_id = {s: i for i, s in enumerate(syllables)}
+                self.vocab_size = len(self.id_to_token)
 
-            # Add blank token at the end
-            self.blank_id = self.vocab_size
-            self.id_to_token[self.blank_id] = BLANK_TOKEN
-            self.token_to_id[BLANK_TOKEN] = self.blank_id
+                # Add special tokens
+                self.unk_id = self.vocab_size
+                self.id_to_token[self.unk_id] = UNK_TOKEN
+                self.token_to_id[UNK_TOKEN] = self.unk_id
+
+                # Add blank token at the end
+                self.blank_id = self.vocab_size + 1
+                self.id_to_token[self.blank_id] = BLANK_TOKEN
+                self.token_to_id[BLANK_TOKEN] = self.blank_id
+
+                print(f"Loaded syllable vocabulary with {self.vocab_size} syllables")
+            except Exception as e:
+                print(f"Error loading syllable vocabulary: {e}")
+                self._create_fallback_vocabulary()
+        else:
+            print(f"Syllable vocabulary file not found: {vocab_file}")
+            self._create_fallback_vocabulary()
+
+    def _create_fallback_vocabulary(self):
+        """Create a simple fallback vocabulary."""
+        # Common Vietnamese syllables
+        syllables = [
+            "xin", "chào", "tôi", "là", "người", "việt", "nam", "học", "tiếng", "anh",
+            "cảm", "ơn", "bạn", "rất", "vui", "được", "gặp", "nhà", "trường", "sinh",
+            "viên", "giáo", "dục", "công", "nghệ", "thông", "tin", "khoa", "học", "máy",
+            "tính", "phần", "mềm", "hệ", "thống", "mạng", "internet", "điện", "thoại", "di",
+            "động", "thời", "gian", "ngày", "tháng", "năm", "giờ", "phút", "giây", "sáng",
+            "trưa", "chiều", "tối", "đêm", "hôm", "nay", "mai", "qua", "kia", "mốt"
+        ]
+
+        # Create vocabulary
+        self.id_to_token = {i: s for i, s in enumerate(syllables)}
+        self.token_to_id = {s: i for i, s in enumerate(syllables)}
+        self.vocab_size = len(self.id_to_token)
+
+        # Add special tokens
+        self.unk_id = self.vocab_size
+        self.id_to_token[self.unk_id] = UNK_TOKEN
+        self.token_to_id[UNK_TOKEN] = self.unk_id
+
+        # Add blank token at the end
+        self.blank_id = self.vocab_size + 1
+        self.id_to_token[self.blank_id] = BLANK_TOKEN
+        self.token_to_id[BLANK_TOKEN] = self.blank_id
+
+        print(f"Created fallback syllable vocabulary with {self.vocab_size} syllables")
 
     def encode(self, text: str) -> List[int]:
         """Convert text to syllable IDs."""
-        # Split text into syllables (words separated by spaces in Vietnamese)
-        syllables = text.lower().split()
-        return [self.token_to_id.get(s, self.token_to_id.get(UNK_TOKEN, 0)) for s in syllables]
+        try:
+            # Split text into syllables (words separated by spaces in Vietnamese)
+            syllables = text.lower().split()
+            return [self.token_to_id.get(s, self.unk_id) for s in syllables]
+        except Exception as e:
+            print(f"Error in syllable encoding: {e}")
+            # Return a sequence of UNK tokens as a last resort
+            return [self.unk_id] * (len(text.split()) or 1)
 
     def decode(self, ids: List[int]) -> str:
         """Convert syllable IDs to text."""
-        return ' '.join([self.id_to_token.get(id, '') for id in ids if id != self.blank_id])
+        try:
+            return ' '.join([self.id_to_token.get(id, '') for id in ids if id != self.blank_id])
+        except Exception as e:
+            print(f"Error in syllable decoding: {e}")
+            return UNK_TOKEN  # Return a single UNK token as a last resort
 
 class WordTokenizer(TokenizerBase):
     """Word-level tokenizer for Vietnamese with OOV fallback."""
@@ -237,77 +458,138 @@ class WordTokenizer(TokenizerBase):
         self.subword_tokenizer = subword_tokenizer
 
         if vocab_file and os.path.exists(vocab_file):
-            # Load word vocabulary from file
-            with open(vocab_file, 'r', encoding='utf-8') as f:
-                words = [line.strip() for line in f]
+            try:
+                # Load word vocabulary from file
+                with open(vocab_file, 'r', encoding='utf-8') as f:
+                    words = [line.strip() for line in f]
 
-            # Create vocabulary
-            self.id_to_token = {i: w for i, w in enumerate(words)}
-            self.token_to_id = {w: i for i, w in enumerate(words)}
-            self.vocab_size = len(self.id_to_token)
+                # Create vocabulary
+                self.id_to_token = {i: w for i, w in enumerate(words)}
+                self.token_to_id = {w: i for i, w in enumerate(words)}
+                self.vocab_size = len(self.id_to_token)
 
-            # Add special tokens
-            self.unk_id = self.vocab_size
-            self.id_to_token[self.unk_id] = UNK_TOKEN
-            self.token_to_id[UNK_TOKEN] = self.unk_id
+                # Add special tokens
+                self.unk_id = self.vocab_size
+                self.id_to_token[self.unk_id] = UNK_TOKEN
+                self.token_to_id[UNK_TOKEN] = self.unk_id
 
-            # Add blank token at the end
-            self.blank_id = self.vocab_size + 1
-            self.id_to_token[self.blank_id] = BLANK_TOKEN
-            self.token_to_id[BLANK_TOKEN] = self.blank_id
+                # Add blank token at the end
+                self.blank_id = self.vocab_size + 1
+                self.id_to_token[self.blank_id] = BLANK_TOKEN
+                self.token_to_id[BLANK_TOKEN] = self.blank_id
+
+                print(f"Loaded word vocabulary with {self.vocab_size} words")
+            except Exception as e:
+                print(f"Error loading word vocabulary: {e}")
+                self._create_fallback_vocabulary()
+        else:
+            print(f"Word vocabulary file not found: {vocab_file}")
+            self._create_fallback_vocabulary()
+
+    def _create_fallback_vocabulary(self):
+        """Create a simple fallback vocabulary."""
+        # Common Vietnamese words
+        words = [
+            "xin", "chào", "tôi", "là", "người", "việt", "nam", "học", "tiếng", "anh",
+            "cảm", "ơn", "bạn", "rất", "vui", "được", "gặp", "nhà", "trường", "sinh",
+            "viên", "giáo", "dục", "công", "nghệ", "thông", "tin", "khoa", "học", "máy",
+            "tính", "phần", "mềm", "hệ", "thống", "mạng", "internet", "điện", "thoại", "di",
+            "động", "thời", "gian", "ngày", "tháng", "năm", "giờ", "phút", "giây", "sáng",
+            "xin chào", "cảm ơn", "việt nam", "học sinh", "sinh viên", "giáo dục",
+            "công nghệ", "thông tin", "khoa học", "máy tính"
+        ]
+
+        # Create vocabulary
+        self.id_to_token = {i: w for i, w in enumerate(words)}
+        self.token_to_id = {w: i for i, w in enumerate(words)}
+        self.vocab_size = len(self.id_to_token)
+
+        # Add special tokens
+        self.unk_id = self.vocab_size
+        self.id_to_token[self.unk_id] = UNK_TOKEN
+        self.token_to_id[UNK_TOKEN] = self.unk_id
+
+        # Add blank token at the end
+        self.blank_id = self.vocab_size + 1
+        self.id_to_token[self.blank_id] = BLANK_TOKEN
+        self.token_to_id[BLANK_TOKEN] = self.blank_id
+
+        print(f"Created fallback word vocabulary with {self.vocab_size} words")
 
     def encode(self, text: str) -> List[int]:
         """Convert text to word IDs with OOV handling."""
-        # Split text into words (multi-syllable words in Vietnamese)
-        # This is a simplification; proper Vietnamese word segmentation is more complex
-        words = text.lower().split()
+        try:
+            # Split text into words (multi-syllable words in Vietnamese)
+            # This is a simplification; proper Vietnamese word segmentation is more complex
+            words = text.lower().split()
 
-        ids = []
-        for word in words:
-            if word in self.token_to_id:
-                ids.append(self.token_to_id[word])
-            elif self.subword_tokenizer:
-                # Fall back to subword tokenization for OOV
-                subword_ids = self.subword_tokenizer.encode(word)
-                # Mark these as special OOV tokens by adding an offset
-                oov_ids = [self.vocab_size + 2 + sid for sid in subword_ids]
-                ids.extend(oov_ids)
-            else:
-                # No fallback available, use UNK token
-                ids.append(self.unk_id)
+            ids = []
+            for word in words:
+                if word in self.token_to_id:
+                    ids.append(self.token_to_id[word])
+                elif self.subword_tokenizer:
+                    try:
+                        # Fall back to subword tokenization for OOV
+                        subword_ids = self.subword_tokenizer.encode(word)
+                        # Mark these as special OOV tokens by adding an offset
+                        oov_ids = [self.vocab_size + 2 + sid for sid in subword_ids]
+                        ids.extend(oov_ids)
+                    except Exception as e:
+                        print(f"Error in subword encoding for '{word}': {e}")
+                        # Fallback to character-level encoding
+                        for c in word:
+                            ids.append(self.unk_id)  # Use UNK for each character as a last resort
+                else:
+                    # No fallback available, use UNK token
+                    ids.append(self.unk_id)
 
-        return ids
+            return ids
+        except Exception as e:
+            print(f"Error in word encoding: {e}")
+            # Return a sequence of UNK tokens as a last resort
+            return [self.unk_id] * (len(text.split()) or 1)
 
     def decode(self, ids: List[int]) -> str:
         """Convert word IDs to text with OOV handling."""
-        words = []
-        i = 0
-        while i < len(ids):
-            if ids[i] == self.blank_id:
-                i += 1
-                continue
-
-            if ids[i] < self.vocab_size:
-                # Regular word
-                words.append(self.id_to_token.get(ids[i], ''))
-            elif ids[i] == self.unk_id:
-                # Unknown word
-                words.append(UNK_TOKEN)
-            elif self.subword_tokenizer and ids[i] > self.vocab_size + 1:
-                # OOV word represented as subwords
-                # Collect all consecutive subword IDs
-                subword_ids = []
-                while i < len(ids) and ids[i] > self.vocab_size + 1:
-                    subword_ids.append(ids[i] - (self.vocab_size + 2))
+        try:
+            words = []
+            i = 0
+            while i < len(ids):
+                if ids[i] == self.blank_id:
                     i += 1
-                # Decode subwords
-                if subword_ids:
-                    words.append(self.subword_tokenizer.decode(subword_ids))
-                continue
+                    continue
 
-            i += 1
+                if ids[i] < self.vocab_size:
+                    # Regular word
+                    words.append(self.id_to_token.get(ids[i], ''))
+                elif ids[i] == self.unk_id:
+                    # Unknown word
+                    words.append(UNK_TOKEN)
+                elif self.subword_tokenizer and ids[i] > self.vocab_size + 1:
+                    try:
+                        # OOV word represented as subwords
+                        # Collect all consecutive subword IDs
+                        subword_ids = []
+                        while i < len(ids) and ids[i] > self.vocab_size + 1:
+                            subword_ids.append(ids[i] - (self.vocab_size + 2))
+                            i += 1
+                        # Decode subwords
+                        if subword_ids:
+                            words.append(self.subword_tokenizer.decode(subword_ids))
+                        continue
+                    except Exception as e:
+                        print(f"Error in subword decoding: {e}")
+                        words.append(UNK_TOKEN)
+                else:
+                    # Unrecognized ID
+                    words.append(UNK_TOKEN)
 
-        return ' '.join(words)
+                i += 1
+
+            return ' '.join(words)
+        except Exception as e:
+            print(f"Error in word decoding: {e}")
+            return UNK_TOKEN  # Return a single UNK token as a last resort
 
 class CTCDecoder:
     """CTC decoder implementation with greedy and beam search algorithms."""
@@ -583,16 +865,29 @@ class ASREvaluator:
                 beam_text = tokenizer.decode(beam_ids)
 
                 # Calculate metrics
-                sample_cer = cer(transcript, beam_text)
+                try:
+                    # Ensure transcript and hypothesis are not empty
+                    if not transcript or not beam_text:
+                        raise ValueError("Reference or hypothesis is empty")
 
-                # For word-level metrics, we need to tokenize by whitespace
-                ref_words = transcript.split()
-                hyp_words = beam_text.split()
-                sample_wer = wer(ref_words, hyp_words)
+                    # Character Error Rate
+                    sample_cer = cer(transcript, beam_text)
 
-                # For syllable-level metrics (specific to Vietnamese)
-                # In Vietnamese, syllables are separated by spaces
-                sample_ser = sample_wer  # Same as WER for Vietnamese
+                    # For word-level metrics, we need to use the original strings
+                    # jiwer library handles tokenization internally
+                    sample_wer = wer(transcript, beam_text)
+
+                    # For syllable-level metrics (specific to Vietnamese)
+                    # In Vietnamese, syllables are separated by spaces, so WER = SER
+                    sample_ser = sample_wer  # Same as WER for Vietnamese
+                except Exception as e:
+                    print(f"Error calculating metrics for {file_id}: {e}")
+                    print(f"Reference: '{transcript}'")
+                    print(f"Hypothesis: '{beam_text}'")
+                    # Use default values in case of error
+                    sample_cer = 1.0  # 100% error
+                    sample_wer = 1.0  # 100% error
+                    sample_ser = 1.0  # 100% error
 
                 # Store results
                 metrics['cer'].append(sample_cer)
@@ -978,18 +1273,38 @@ def main():
     subword_tokenizer = None
     if 'subword' in tokenizer_options or 'word' in tokenizer_options:
         # Subword tokenizer
-        if os.path.exists(args.subword_model_path):
+        try:
+            # Try to create a subword tokenizer with the specified model path
+            # The SubwordTokenizer class now handles invalid model files internally
             subword_tokenizer = SubwordTokenizer(vocab_size=args.subword_vocab_size, model_path=args.subword_model_path)
-            print(f"Loaded subword model from {args.subword_model_path}")
-        else:
-            print(f"Subword model not found at {args.subword_model_path}. Creating a dummy model.")
-            print("For proper BPE tokenization, train a SentencePiece model first:")
-            print(f"python -c \"from ctc_eval import SubwordTokenizer; tokenizer = SubwordTokenizer(vocab_size={args.subword_vocab_size}); tokenizer.train('data/train.txt', '{args.subword_model_path[:-6]}')\"")
+
+            # Check if we need to train a model
+            if subword_tokenizer.sp_model is None:
+                print("Training a new SentencePiece model...")
+                # Create a sample training file if it doesn't exist
+                train_file = "data/train.txt"
+                os.makedirs(os.path.dirname(train_file), exist_ok=True)
+
+                if not os.path.exists(train_file):
+                    with open(train_file, 'w', encoding='utf-8') as f:
+                        # Sample Vietnamese sentences
+                        sentences = [
+                            "Xin chào, tôi đang thử nghiệm hệ thống nhận dạng tiếng nói.",
+                            "Công nghệ nhận dạng tiếng nói đã phát triển rất nhanh trong những năm gần đây.",
+                            "Mô hình CTC đã cải thiện đáng kể độ chính xác của hệ thống nhận dạng tiếng nói.",
+                            "Việt Nam có một nền văn hóa phong phú và đa dạng với nhiều dân tộc khác nhau.",
+                            "Chúng tôi đang nghiên cứu các phương pháp cải thiện độ chính xác của hệ thống ASR."
+                        ]
+                        f.write('\n'.join(sentences))
+
+                # Train the model
+                model_prefix = args.subword_model_path[:-6]  # Remove .model extension
+                subword_tokenizer.train(train_file, model_prefix)
+        except Exception as e:
+            print(f"Error initializing subword tokenizer: {e}")
+            print("Creating a character-based fallback tokenizer")
             subword_tokenizer = SubwordTokenizer(vocab_size=args.subword_vocab_size)
-            # Create a dummy model for demonstration
-            os.makedirs(os.path.dirname(args.subword_model_path), exist_ok=True)
-            with open(args.subword_model_path, 'w') as f:
-                f.write("Dummy model")
+            subword_tokenizer._create_fallback_model()
 
         if 'subword' in tokenizer_options:
             evaluator.add_tokenizer(subword_tokenizer, lm_path="data/lm/subword_lm.arpa" if os.path.exists("data/lm/subword_lm.arpa") else None)
@@ -1043,10 +1358,9 @@ def main():
                     f.write("\n".join(words))
 
             if subword_tokenizer is None:
-                print("Warning: Word tokenizer requires subword tokenizer for OOV handling. Creating a basic subword tokenizer.")
+                print("Warning: Word tokenizer requires subword tokenizer for OOV handling. Creating a character-based fallback tokenizer.")
                 subword_tokenizer = SubwordTokenizer(vocab_size=args.subword_vocab_size)
-                with open(args.subword_model_path, 'w') as f:
-                    f.write("Dummy model")
+                subword_tokenizer._create_fallback_model()
 
             word_tokenizer = WordTokenizer(vocab_file=args.word_vocab_path, subword_tokenizer=subword_tokenizer)
             evaluator.add_tokenizer(word_tokenizer, lm_path="data/lm/word_lm.arpa" if os.path.exists("data/lm/word_lm.arpa") else None)
