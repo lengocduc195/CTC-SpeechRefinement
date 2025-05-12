@@ -56,17 +56,8 @@ CTC-SpeechRefinement/
 │   ├── audio/                # Audio files
 │   ├── tokenizers/           # Tokenizer files
 │   └── transcripts/          # Reference transcripts
-├── docs/                     # Project documentation
 ├── notebooks/                # Jupyter notebooks for EDA
-├── results/                  # Evaluation results
-├── tests/                    # Project-level tests
-├── transcripts/              # Generated transcriptions
 ├── requirements.txt          # Dependencies
-├── run_audio_eda.py          # Script to run audio EDA
-├── run_error_analysis.py     # Script to run error analysis
-├── run_preprocessing_ui.py   # Script to run preprocessing UI
-├── run_speculative_decoding.py # Script to run speculative decoding
-├── run_transcription.py      # Script to run transcription
 └── README.md                 # Project documentation
 ```
 
@@ -101,77 +92,8 @@ CTC-SpeechRefinement/
 Run the transcription with default settings:
 
 ```bash
-python run_transcription.py
+python run.py
 ```
-
-With custom options:
-
-```bash
-python run_transcription.py --input_dir data/audio \
-                           --output_dir transcripts \
-                           --results_dir results \
-                           --model_name facebook/wav2vec2-base-960h \
-                           --decoder_type beam_search \
-                           --beam_width 100 \
-                           --normalize_audio \
-                           --remove_silence \
-                           --reference_dir data/transcripts
-```
-
-### Audio EDA (Exploratory Data Analysis)
-
-Run audio EDA with default settings:
-
-```bash
-python run_audio_eda.py
-```
-
-With custom options:
-
-```bash
-python run_audio_eda.py --input_dir data/audio \
-                       --output_dir results/eda \
-                       --analysis_types time,frequency,pitch \
-                       --visualize
-```
-
-### Speculative Decoding
-
-Run speculative decoding with default settings:
-
-```bash
-python run_speculative_decoding.py
-```
-
-With custom options:
-
-```bash
-python run_speculative_decoding.py --input_dir data/audio \
-                                  --output_dir transcripts/speculative \
-                                  --results_dir results/speculative \
-                                  --model_name facebook/wav2vec2-base-960h \
-                                  --drafter_type ctc_drafter \
-                                  --acceptance_threshold 0.8
-```
-
-### Error Analysis
-
-Run error analysis on transcription results:
-
-```bash
-python run_error_analysis.py --reference_dir data/transcripts \
-                            --hypothesis_dir transcripts \
-                            --output_dir results/error_analysis
-```
-
-### Preprocessing UI
-
-Launch the audio preprocessing UI:
-
-```bash
-python run_preprocessing_ui.py
-```
-
 ## Jupyter Notebooks
 
 The project includes several Jupyter notebooks for interactive audio analysis:
@@ -189,20 +111,6 @@ To run the notebooks:
 ```bash
 jupyter notebook notebooks/
 ```
-
-## Documentation
-
-For more detailed information, refer to the documentation in the `docs/` directory:
-
-- `ARCHITECTURE.md`: System architecture overview
-- `AUDIO_EDA_GUIDE.md`: Guide to audio EDA features
-- `AUDIO_PREPROCESSING_GUIDE.md`: Guide to audio preprocessing
-- `DEVELOPER_GUIDE.md`: Guide for developers
-- `ERROR_ANALYSIS_GUIDE.md`: Guide to error analysis
-- `INTEGRATION_GUIDE.md`: Guide for integrating with other systems
-- `SPECULATIVE_DECODING.md`: Guide to speculative decoding
-- `TECHNICAL_DEBT.md`: Known limitations and technical debt
-- `USAGE_EXAMPLES.md`: Additional usage examples
 
 ## License
 
