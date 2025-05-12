@@ -1,0 +1,1 @@
+Hệ thống nhận dạng tiếng nói tự động giúp chuyển đổi âm thanh thành văn bản.

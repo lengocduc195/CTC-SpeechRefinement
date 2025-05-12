@@ -1,1 +1,0 @@
-Xin chào, tôi đang thử nghiệm hệ thống nhận dạng tiếng nói.

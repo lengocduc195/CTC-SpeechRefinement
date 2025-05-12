@@ -1,1 +1,0 @@
-Chúng tôi đang nghiên cứu các phương pháp cải thiện độ chính xác của hệ thống ASR.

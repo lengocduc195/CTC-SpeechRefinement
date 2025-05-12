@@ -464,9 +464,21 @@ class WordTokenizer(TokenizerBase):
 
         if vocab_file and os.path.exists(vocab_file):
             try:
-                # Load word vocabulary from file
-                with open(vocab_file, 'r', encoding='utf-8') as f:
-                    words = [line.strip() for line in f]
+                # Try different encodings to load word vocabulary from file
+                words = []
+                encodings = ['utf-8', 'latin-1', 'cp1252']
+
+                for encoding in encodings:
+                    try:
+                        with open(vocab_file, 'r', encoding=encoding) as f:
+                            words = [line.strip() for line in f if line.strip()]
+                        print(f"Successfully loaded vocabulary with encoding: {encoding}")
+                        break
+                    except UnicodeDecodeError:
+                        print(f"Failed to load vocabulary with encoding: {encoding}")
+
+                if not words:
+                    raise ValueError("Could not load vocabulary with any encoding")
 
                 # Create vocabulary
                 self.id_to_token = {i: w for i, w in enumerate(words)}
@@ -908,7 +920,8 @@ class ASREvaluator:
         return mock_logits
 
     def evaluate(self, test_data: Dict[str, Dict[str, Any]],
-                beam_size: int = 10, alpha: float = 0.5, beta: float = 1.0) -> Dict[str, Dict[str, Any]]:
+                beam_size: int = 10, alpha: float = 0.5, beta: float = 1.0,
+                generate_transcripts: bool = True) -> Dict[str, Dict[str, Any]]:
         """
         Evaluate ASR performance with different tokenization levels.
 
@@ -917,11 +930,18 @@ class ASREvaluator:
             beam_size: Beam size for beam search decoding
             alpha: Language model weight
             beta: Length penalty
+            generate_transcripts: Whether to generate transcript files for each audio file
 
         Returns:
             Dictionary of evaluation results
         """
         results = {}
+
+        # Create directory for generated transcripts
+        if generate_transcripts:
+            transcripts_dir = os.path.join(self.output_dir, 'generated_transcripts')
+            os.makedirs(transcripts_dir, exist_ok=True)
+            print(f"Generated transcripts will be saved to {transcripts_dir}")
 
         for tokenizer_name, tokenizer in self.tokenizers.items():
             print(f"\nEvaluating {tokenizer_name} tokenizer...")
@@ -938,9 +958,15 @@ class ASREvaluator:
                 'samples': []
             }
 
+            # Create tokenizer-specific transcript directory
+            if generate_transcripts:
+                tokenizer_transcripts_dir = os.path.join(transcripts_dir, tokenizer_name)
+                os.makedirs(tokenizer_transcripts_dir, exist_ok=True)
+
             for file_id, data in tqdm(test_data.items(), desc=f"Decoding with {tokenizer_name}"):
                 transcript = data['transcript']
                 logits = data['logits'][tokenizer_name]
+                audio_path = data['audio_path']
 
                 # Greedy decoding
                 greedy_ids, greedy_time = decoder.greedy_decode(logits)
@@ -951,6 +977,27 @@ class ASREvaluator:
                     logits, lm, beam_size=beam_size, alpha=alpha, beta=beta
                 )
                 beam_text = tokenizer.decode(beam_ids)
+
+                # Generate transcript files
+                if generate_transcripts:
+                    # Get the base filename without extension
+                    base_filename = os.path.basename(audio_path)
+                    base_name = os.path.splitext(base_filename)[0]
+
+                    # Save greedy decoding result
+                    greedy_path = os.path.join(tokenizer_transcripts_dir, f"{base_name}_greedy.txt")
+                    with open(greedy_path, 'w', encoding='utf-8') as f:
+                        f.write(greedy_text)
+
+                    # Save beam search decoding result
+                    beam_path = os.path.join(tokenizer_transcripts_dir, f"{base_name}_beam.txt")
+                    with open(beam_path, 'w', encoding='utf-8') as f:
+                        f.write(beam_text)
+
+                    # Save reference transcript for comparison
+                    ref_path = os.path.join(tokenizer_transcripts_dir, f"{base_name}_reference.txt")
+                    with open(ref_path, 'w', encoding='utf-8') as f:
+                        f.write(transcript)
 
                 # Calculate metrics
                 try:
@@ -1013,6 +1060,9 @@ class ASREvaluator:
             print(f"  Average SER: {results[tokenizer_name]['avg_ser']:.4f}")
             print(f"  Average greedy decoding time: {results[tokenizer_name]['avg_greedy_time']*1000:.2f} ms")
             print(f"  Average beam search decoding time: {results[tokenizer_name]['avg_beam_time']*1000:.2f} ms")
+
+            if generate_transcripts:
+                print(f"  Generated transcripts saved to {tokenizer_transcripts_dir}")
 
         return results
 
@@ -1325,6 +1375,8 @@ def main():
                        help="Language model weight")
     parser.add_argument("--beta", type=float, default=1.0,
                        help="Length penalty")
+    parser.add_argument("--generate_transcripts", action="store_true", default=True,
+                       help="Generate transcript files for each audio file")
 
     # Tokenizer options
     parser.add_argument("--tokenizers", type=str, default="all",
@@ -1336,7 +1388,7 @@ def main():
     parser.add_argument("--syllable_vocab_path", type=str, default="data/tokenizers/vietnamese_syllables.txt",
                        help="Path to syllable vocabulary file")
     parser.add_argument("--word_vocab_path", type=str, default="data/tokenizers/vietnamese_words.txt",
-                       help="Path to word vocabulary file")
+                       help="Path to word vocabulary file (can be any text file with one word per line)")
 
     args = parser.parse_args()
 
@@ -1477,7 +1529,8 @@ def main():
         test_data,
         beam_size=args.beam_size,
         alpha=args.alpha,
-        beta=args.beta
+        beta=args.beta,
+        generate_transcripts=args.generate_transcripts
     )
 
     # Generate report
