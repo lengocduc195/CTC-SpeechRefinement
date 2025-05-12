@@ -1,0 +1,52 @@
+{
+    "test2_08.wav": {
+        "transcription": "đặt mít tinh on lai với tim lúc chưa",
+        "reference": "đặt meeting online với team lúc trưa",
+        "wer": 0.8571428571428571
+    },
+    "test2_05.wav": {
+        "transcription": "thới tiết hà nội ngày mai thế nào",
+        "reference": "Thời tiết Hà Nội ngày mai như thế nào",
+        "wer": 0.4444444444444444
+    },
+    "test2_03.wav": {
+        "transcription": "chỉ đường đến khách sạn ma ri ớt trung tâm",
+        "reference": "Chỉ đường đến khách sạn Marriott trung tâm",
+        "wer": 0.5
+    },
+    "test2_06.wav": {
+        "transcription": "tạo nhắc nhở mua sữa khi về nhà",
+        "reference": "tạo nhắc nhở mua sữa khi về nhà",
+        "wer": 0.0
+    },
+    "test2_04.wav": {
+        "transcription": "tìm kiếm sách của tác giả ti phần kinh",
+        "reference": "Tìm kiếm sách của tác giả Stephen King",
+        "wer": 0.5
+    },
+    "test2_09.wav": {
+        "transcription": "tim mác phôn giá tốt dưới năm triệu",
+        "reference": "tìm smartphone giá tốt dưới năm triệu",
+        "wer": 0.42857142857142855
+    },
+    "test2_10.wav": {
+        "transcription": "múc cho tôi vé máy bay đi sin ga po ngày mai",
+        "reference": "book cho tôi vé máy bay đi Singapore ngày mai",
+        "wer": 0.4
+    },
+    "test2_02.wav": {
+        "transcription": "bật nhạc blếch pinh hộ em nhé",
+        "reference": "Bật nhạc blackpink hộ em nhé",
+        "wer": 0.5
+    },
+    "test2_01.wav": {
+        "transcription": "tôi muốn đến tòa nhà ta ca xi mơy a",
+        "reference": "Tôi muốn đến tòa nhà Takashimaya",
+        "wer": 1.0
+    },
+    "test2_07.wav": {
+        "transcription": "đọc tin tức mới nhất về công nghệ",
+        "reference": "đọc tin tức mới nhất về công nghệ",
+        "wer": 0.0
+    }
+}

@@ -1,1 +1,0 @@
-Mô hình CTC đã cải thiện đáng kể độ chính xác của hệ thống nhận dạng.

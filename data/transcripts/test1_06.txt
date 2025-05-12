@@ -1,1 +1,1 @@
-Hệ thống nhận dạng tiếng nói tự động giúp chuyển đổi âm thanh thành văn bản.
+Tìm các nhà hàng Ý có đánh giá trên 4 sao trong bán kính 5 km.

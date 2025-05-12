@@ -1,0 +1,32 @@
+{
+    "test1_01.wav": {
+        "transcription": "sau năm mươi năm thống nhất thành phố hồ chí minh đã vươn mình thành đô thị hiện đại sôi động bậc nhất đông nam á với những tòa cao ốc trọc trời như sài gòn sen trờ bi tet cô phai nen sô thao ở len mác tám mươi mốt và sắp tới là em pai tám mươi tám thao ở ở thủ thiêm",
+        "reference": "Sau 50 năm thống nhất, Thành phố Hồ Chí Minh đã vươn mình trở thành một đô thị hiện đại, sôi động bậc nhất Đông Nam Á, với những tòa cao ốc chọc trời như Saigon Centre, Bitexco Financial Tower, Landmark 81 và sắp tới là Empire 88 Tower ở Thủ Thiêm.",
+        "wer": 0.7884615384615384
+    },
+    "test1_06.wav": {
+        "transcription": "tìm kiếm các nhà hàng ý có đánh giá trên bốn sao trong bán kính năm ki lô mét",
+        "reference": "Tìm các nhà hàng Ý có đánh giá trên 4 sao trong bán kính 5 km.",
+        "wer": 0.5
+    },
+    "test1_03.wav": {
+        "transcription": "gửi i meu cho toàn bộ nhóm dự án về việc hoãn cuộc học sáng mai sang chiều thứ sáu và nhắc họ chuẩn bị báo cáo tiến độ",
+        "reference": "Gửi email cho toàn bộ nhóm dự án về việc hoãn cuộc họp sáng mai sang chiều thứ Sáu và nhắc họ chuẩn bị báo cáo tiến độ.",
+        "wer": 0.21428571428571427
+    },
+    "test1_05.wav": {
+        "transcription": "tạo danh sách công việc cần hoàn thành trước cuối tuần này và sắp xếp theo thứ tự ưu tiên dựa trên đét lai và mức độ quan trọng",
+        "reference": "Tạo danh sách công việc cần hoàn thành trước cuối tuần này, và sắp xếp theo thứ tự ưu tiên dựa trên deadline và mức độ quan trọng.",
+        "wer": 0.17857142857142858
+    },
+    "test1_04.wav": {
+        "transcription": "những thông tin chuyến bay từ hà nội đến qa rít vào đầu tháng mười hai năm nay",
+        "reference": "Tìm thông tin chuyến bay từ Hà Nội đến Qatar vào đầu tháng Mười Hai năm nay.",
+        "wer": 0.47058823529411764
+    },
+    "test1_02.wav": {
+        "transcription": "trong tương lai thành phố hồ chí minh dự kiến xáp nhập với bình dương và bà diện vũng tàu tạo nên siêu đô thị mười ba phẩy năm triệu dân với quy mô kinh tế lên đến một trăm mười bốn phẩy ba tỷ u ét tê",
+        "reference": "Trong tương lai, Thành phố Hồ Chí Minh dự kiến sáp nhập với Bình Dương và Bà Rịa – Vũng Tàu, tạo nên siêu đô thị 13,5 triệu dân với quy mô kinh tế lên đến 114,3 tỷ USD.",
+        "wer": 0.6923076923076923
+    }
+}
