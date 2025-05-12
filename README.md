@@ -1,126 +1,217 @@
-# CTC Speech Transcription
+# Vietnamese ASR CTC Decoder Evaluation
 
-This project implements a CTC (Connectionist Temporal Classification) decoder for accurate speech transcription. It uses state-of-the-art pretrained models and provides options for different decoding strategies to maximize transcription accuracy.
+This project evaluates different tokenization levels for Vietnamese Automatic Speech Recognition (ASR) using Connectionist Temporal Classification (CTC) decoding. It compares character-level, subword-level, syllable-level, and word-level tokenization in terms of accuracy and decoding speed.
+
+## Features
+
+- **Multiple tokenization levels**:
+  - Character-level: All Vietnamese characters + diacritics
+  - Subword-level: Byte-Pair Encoding (BPE) with configurable vocabulary size
+  - Syllable-level: Vietnamese syllables as tokens
+  - Word-level: Vietnamese words with OOV fallback to subwords
+
+- **CTC decoding algorithms**:
+  - Greedy decoding
+  - Beam search with language model integration
+  - Speculative decoding with CTC-Drafter and CR-CTC
+
+- **Comprehensive evaluation**:
+  - Character Error Rate (CER)
+  - Word Error Rate (WER)
+  - Syllable Error Rate (SER)
+  - Decoding latency measurements
+  - Detailed reports and visualizations
+
+- **Audio EDA (Exploratory Data Analysis)**:
+  - Time-domain analysis
+  - Frequency-domain analysis
+  - Amplitude/energy analysis
+  - Pitch/timbre analysis
+  - Anomaly detection
+  - Data preprocessing options
 
 ## Project Structure
 
 ```
 CTC-SpeechRefinement/
-├── config/                 # Configuration files
-├── data/                   # Audio data
-│   ├── test1/              # Test set 1
-│   └── test2/              # Test set 2
-├── docs/                   # Documentation
-├── models/                 # Saved models
-├── results/                # Evaluation results
-├── src/                    # Source code
-│   ├── preprocessing/      # Audio preprocessing
-│   ├── features/           # Feature extraction
-│   ├── models/             # Acoustic models
-│   ├── decoder/            # CTC decoder
-│   └── utils/              # Utility functions
-├── tests/                  # Unit tests
-├── transcripts/            # Generated transcriptions
-├── requirements.txt        # Dependencies
-├── transcribe.py           # Main script
-└── README.md               # Project documentation
+├── ctc_speech_refinement/    # Main package
+│   ├── apps/                 # Application modules
+│   │   ├── audio_eda/        # Audio EDA application
+│   │   ├── speculative_decoding/ # Speculative decoding application
+│   │   ├── transcription/    # Transcription application
+│   │   └── ui/               # UI applications
+│   ├── config/               # Configuration files
+│   ├── core/                 # Core functionality
+│   │   ├── decoder/          # CTC decoders
+│   │   ├── eda/              # EDA functionality
+│   │   ├── features/         # Feature extraction
+│   │   ├── models/           # Acoustic models
+│   │   ├── preprocessing/    # Audio preprocessing
+│   │   ├── ui/               # UI components
+│   │   └── utils/            # Utility functions
+│   ├── docs/                 # Documentation
+│   ├── tests/                # Unit tests
+│   └── transcripts/          # Generated transcriptions
+├── data/                     # Audio data and tokenizers
+│   ├── audio/                # Audio files
+│   ├── tokenizers/           # Tokenizer files
+│   └── transcripts/          # Reference transcripts
+├── docs/                     # Project documentation
+├── notebooks/                # Jupyter notebooks for EDA
+├── results/                  # Evaluation results
+├── tests/                    # Project-level tests
+├── transcripts/              # Generated transcriptions
+├── requirements.txt          # Dependencies
+├── run_audio_eda.py          # Script to run audio EDA
+├── run_error_analysis.py     # Script to run error analysis
+├── run_preprocessing_ui.py   # Script to run preprocessing UI
+├── run_speculative_decoding.py # Script to run speculative decoding
+├── run_transcription.py      # Script to run transcription
+└── README.md                 # Project documentation
 ```
 
 ## Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/CTC-SpeechRefinement.git
-cd CTC-SpeechRefinement
-```
+   ```bash
+   git clone https://github.com/yourusername/CTC-SpeechRefinement.git
+   cd CTC-SpeechRefinement
+   ```
 
 2. Create a virtual environment (optional but recommended):
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
 3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. (Optional) Install KenLM for language model support:
+   ```bash
+   pip install https://github.com/kpu/kenlm/archive/master.zip
+   ```
 
 ## Usage
 
-### Basic Transcription
+### Speech Transcription
 
-To transcribe audio files using the default settings:
-
-```bash
-python transcribe.py --input_dir data/test1
-```
-
-This will:
-1. Load audio files from the specified directory
-2. Preprocess the audio
-3. Run the audio through a pretrained acoustic model
-4. Decode the model outputs using CTC decoding
-5. Save the transcriptions to the `transcripts` directory
-
-### Advanced Options
-
-The script supports several options for customizing the transcription process:
+Run the transcription with default settings:
 
 ```bash
-python transcribe.py --input_dir data/test1 \
-                    --output_dir transcripts \
-                    --results_dir results \
-                    --model_name facebook/wav2vec2-base-960h \
-                    --decoder_type beam_search \
-                    --beam_width 100 \
-                    --normalize_audio \
-                    --remove_silence
+python run_transcription.py
 ```
 
-### Evaluation
-
-If you have reference transcriptions, you can evaluate the quality of the generated transcriptions:
+With custom options:
 
 ```bash
-python transcribe.py --input_dir data/test1 \
-                    --reference_dir reference_transcripts
+python run_transcription.py --input_dir data/audio \
+                           --output_dir transcripts \
+                           --results_dir results \
+                           --model_name facebook/wav2vec2-base-960h \
+                           --decoder_type beam_search \
+                           --beam_width 100 \
+                           --normalize_audio \
+                           --remove_silence \
+                           --reference_dir data/transcripts
 ```
 
-This will compute Word Error Rate (WER) and Character Error Rate (CER) metrics and save the results to the `results` directory.
+### Audio EDA (Exploratory Data Analysis)
 
-## Implementation Approach
+Run audio EDA with default settings:
 
-### Audio Preprocessing
+```bash
+python run_audio_eda.py
+```
 
-The preprocessing module handles:
-- Loading audio files with the correct sample rate
-- Normalizing audio to have zero mean and unit variance
-- Removing silence to improve transcription accuracy
+With custom options:
 
-### Acoustic Model
+```bash
+python run_audio_eda.py --input_dir data/audio \
+                       --output_dir results/eda \
+                       --analysis_types time,frequency,pitch \
+                       --visualize
+```
 
-We use pretrained models from the Hugging Face Transformers library, specifically the Wav2Vec2 model which has been trained on large amounts of speech data. This model converts audio into a sequence of logits representing the probability of each character at each timestep.
+### Speculative Decoding
 
-### CTC Decoding
+Run speculative decoding with default settings:
 
-The CTC decoder converts the model's output logits into text transcriptions. We support two decoding strategies:
+```bash
+python run_speculative_decoding.py
+```
 
-1. **Greedy Decoding**: Simply takes the most likely character at each timestep and collapses repeated characters.
-2. **Beam Search Decoding**: Maintains multiple hypotheses and uses a language model to improve transcription accuracy.
+With custom options:
 
-### Evaluation
+```bash
+python run_speculative_decoding.py --input_dir data/audio \
+                                  --output_dir transcripts/speculative \
+                                  --results_dir results/speculative \
+                                  --model_name facebook/wav2vec2-base-960h \
+                                  --drafter_type ctc_drafter \
+                                  --acceptance_threshold 0.8
+```
 
-We evaluate transcription quality using:
-- Word Error Rate (WER): The percentage of words that are incorrectly transcribed
-- Character Error Rate (CER): The percentage of characters that are incorrectly transcribed
+### Error Analysis
 
-## Results
+Run error analysis on transcription results:
 
-The system achieves high transcription accuracy on the test1 dataset by:
-1. Using a state-of-the-art pretrained acoustic model
-2. Applying appropriate preprocessing to improve audio quality
-3. Using beam search decoding with a language model to correct errors
+```bash
+python run_error_analysis.py --reference_dir data/transcripts \
+                            --hypothesis_dir transcripts \
+                            --output_dir results/error_analysis
+```
+
+### Preprocessing UI
+
+Launch the audio preprocessing UI:
+
+```bash
+python run_preprocessing_ui.py
+```
+
+## Jupyter Notebooks
+
+The project includes several Jupyter notebooks for interactive audio analysis:
+
+1. `01_Basic_Audio_EDA.ipynb`: Basic audio exploration
+2. `02_Audio_Preprocessing.ipynb`: Audio preprocessing techniques
+3. `03_Frequency_Domain_Analysis.ipynb`: Frequency analysis
+4. `04_Pitch_Timbre_Analysis.ipynb`: Pitch and timbre analysis
+5. `05_Anomaly_Detection.ipynb`: Audio anomaly detection
+6. `06_Batch_Audio_Analysis.ipynb`: Batch processing of audio files
+7. `07_Audio_Visualization_Techniques.ipynb`: Advanced visualization techniques
+
+To run the notebooks:
+
+```bash
+jupyter notebook notebooks/
+```
+
+## Documentation
+
+For more detailed information, refer to the documentation in the `docs/` directory:
+
+- `ARCHITECTURE.md`: System architecture overview
+- `AUDIO_EDA_GUIDE.md`: Guide to audio EDA features
+- `AUDIO_PREPROCESSING_GUIDE.md`: Guide to audio preprocessing
+- `DEVELOPER_GUIDE.md`: Guide for developers
+- `ERROR_ANALYSIS_GUIDE.md`: Guide to error analysis
+- `INTEGRATION_GUIDE.md`: Guide for integrating with other systems
+- `SPECULATIVE_DECODING.md`: Guide to speculative decoding
+- `TECHNICAL_DEBT.md`: Known limitations and technical debt
+- `USAGE_EXAMPLES.md`: Additional usage examples
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- This project uses PyTorch for tensor operations
+- SentencePiece for BPE tokenization
+- KenLM for language model integration
+- JiWER for WER/CER calculation
+- Transformers library for pretrained models
